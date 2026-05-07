@@ -2,213 +2,167 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2학년 6반 자리 배치 시스템 - 통합 버젼</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2학년 6반 자리 배치 시스템 - 정식 버전</title>
     <style>
         :root {
-            --primary: #2d3436;
-            --accent: #0984e3;
-            --save: #00b894;
-            --load: #e84393;
-            --aisle-bg: #dfe6e9;
+            --primary: #2d3436; --accent: #0984e3; --save: #00b894;
+            --load: #e84393; --view: #636e72; --aisle-bg: #dfe6e9;
         }
 
         body {
-            font-family: 'Pretendard', sans-serif;
-            background-color: #f5f6fa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px;
-            margin: 0;
-            color: #2f3640;
+            font-family: 'Pretendard', sans-serif; background-color: #f5f6fa;
+            display: flex; flex-direction: column; align-items: center; padding: 30px; margin: 0;
         }
 
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-            width: 95%;
-            max-width: 1100px;
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 95%; max-width: 1100px;
         }
 
         .header { text-align: center; margin-bottom: 20px; }
-        .status-msg { text-align: center; color: var(--accent); font-weight: bold; height: 20px; margin-bottom: 20px;}
+        .status-msg { text-align: center; color: var(--accent); font-weight: bold; height: 24px; margin-bottom: 20px; }
         
+        /* 컨트롤바 레이아웃 수정: 버튼들이 겹치지 않게 명확히 분리 */
         .controls {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border: 1px solid #eee;
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;
+            margin-bottom: 30px; padding: 20px; background: #f8f9fa; 
+            border-radius: 12px; border: 1px solid #eee; align-items: center;
         }
 
-        /* 8열 그리드 (1,2 / 빈 / 4,5 / 빈 / 7,8) */
+        .btn-wrapper { position: relative; width: 180px; height: 50px; }
+        
+        /* 파일 입력창이 버튼 영역 안에서만 작동하도록 제한 */
+        input[type="file"] { 
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%; 
+            opacity: 0; cursor: pointer; z-index: 10;
+        }
+
+        .avoid-check {
+            display: flex; align-items: center; gap: 8px; font-weight: bold;
+            color: #d63031; cursor: pointer; padding: 10px; background: #fff;
+            border-radius: 8px; border: 1px solid #fab1a0;
+        }
+
+        /* 8열 그리드 레이아웃 */
         .classroom {
             display: grid;
             grid-template-columns: repeat(2, 100px) 40px repeat(2, 100px) 40px repeat(2, 100px);
-            gap: 15px 12px;
-            justify-content: center;
-            padding: 25px;
-            background: #ffffff;
-            border: 2px solid #e1b12c; /* 교실 바닥 느낌 */
-            border-radius: 15px;
+            gap: 15px 12px; justify-content: center; padding: 25px;
+            background: #ffffff; border: 3px solid #e1b12c; border-radius: 15px;
         }
 
         .front-board {
-            grid-column: 1 / span 8;
-            background: #353b48;
-            color: white;
-            text-align: center;
-            padding: 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            letter-spacing: 15px;
+            grid-column: 1 / span 8; background: #353b48; color: white;
+            text-align: center; padding: 15px; border-radius: 8px;
+            font-weight: bold; margin-bottom: 20px; letter-spacing: 20px; font-size: 1.2rem;
         }
 
         .seat {
-            width: 100px;
-            height: 70px;
-            background: #fff;
-            border: 2px solid #dcdde1;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.05em;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.3s;
+            width: 100px; height: 75px; background: #fdfdfd; border: 2px solid #dcdde1;
+            border-radius: 10px; display: flex; justify-content: center;
+            align-items: center; font-weight: 800; font-size: 1.1rem;
         }
 
         .aisle {
-            grid-row: span 6;
-            background-color: var(--aisle-bg);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            writing-mode: vertical-lr;
-            color: #b2bec3;
-            font-size: 0.8em;
-            letter-spacing: 5px;
+            grid-row: span 6; background-color: var(--aisle-bg); border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            writing-mode: vertical-lr; color: #7f8c8d; font-size: 0.85rem; font-weight: bold;
         }
 
-        /* 임팩트 효과 */
         .shuffling {
-            animation: shake 0.12s infinite;
-            background-color: #fbc531 !important;
-            border-color: #e1b12c !important;
-            color: #fff;
+            animation: shake 0.1s infinite; background-color: #fbc531 !important; color: white !important;
         }
 
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            50% { transform: translate(-1px, -1px) rotate(-1deg); }
-            100% { transform: translate(1px, -1px) rotate(1deg); }
+            0% { transform: translate(2px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); }
         }
 
-        .assigned {
-            background: var(--accent);
-            color: white;
-            border-color: #0097e6;
-        }
+        .assigned { background: var(--accent); color: white; border-color: #0097e6; }
 
-        /* 버튼 스타일링 */
-        .btn-wrapper { position: relative; overflow: hidden; }
         button, .file-label {
-            display: inline-block;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1em;
-            text-align: center;
-            transition: opacity 0.2s;
+            width: 100%; height: 100%; border: none; border-radius: 10px;
+            color: white; font-weight: bold; cursor: pointer; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
         }
-        button:disabled, .file-label.disabled { background: #ced6e0 !important; cursor: not-allowed; pointer-events: none; }
         
+        /* 버튼 크기 고정 */
+        .action-btn { width: auto; padding: 0 20px; height: 50px; }
+
         .btn-load { background: var(--load); }
+        .btn-view { background: var(--view); }
         .btn-run { background: var(--primary); }
         .btn-save { background: var(--save); }
-        
-        input[type="file"] {
-            position: absolute;
-            left: 0; top: 0; opacity: 0;
-            width: 100%; height: 100%; cursor: pointer;
+        button:disabled { background: #ced6e0 !important; cursor: not-allowed; }
+
+        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+        #listModal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 30px; border-radius: 20px; z-index: 1000; width: 350px;
         }
+        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .name-item { padding: 8px; background: #f1f2f6; border-radius: 6px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>🎓 2학년 6반 자리 배치 시스템</h1>
-    </div>
+    <div class="header"><h1>🎓 2학년 6반 자리 배치 시스템</h1></div>
+    <div class="status-msg" id="statusMsg">학생 명단 파일을 불러와 주세요.</div>
     
-    <div class="status-msg" id="statusMsg">파일을 불러와 주세요.</div>
-
     <div class="controls">
         <div class="btn-wrapper">
-            <div class="file-label btn-load">
-                📂 명단 / 저장파일 불러오기
-                <input type="file" id="fileInput" accept=".txt">
-            </div>
+            <div class="file-label btn-load">📂 파일 불러오기</div>
+            <input type="file" id="fileInput" accept=".txt">
         </div>
         
-        <button id="runBtn" class="btn-run" disabled>🎲 자리 배치 시작</button>
-        <button id="saveBtn" class="btn-save" disabled>💾 현재 결과 저장</button>
+        <button id="viewBtn" class="action-btn btn-view" disabled>📋 명단 확인</button>
+        
+        <label class="avoid-check">
+            <input type="checkbox" id="avoidSameSeat"> 이전 자리 피하기
+        </label>
+
+        <button id="runBtn" class="action-btn btn-run" disabled>🎲 랜덤 자리 배치 시작</button>
+        <button id="saveBtn" class="action-btn btn-save" disabled>💾 현재 결과 저장</button>
     </div>
 
     <div class="classroom" id="classroom">
         <div class="front-board">칠 판 (FRONT)</div>
-        <!-- 좌석 동적 생성 -->
     </div>
 </div>
 
+<div id="modalOverlay"></div>
+<div id="listModal">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:bold; font-size:1.2rem;">학생 명단 (<span id="nameCount">0</span>명)</span>
+        <span id="closeModal" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+    </div>
+    <div id="nameListArea" class="name-grid"></div>
+</div>
+
 <script>
-    const fileInput = document.getElementById('fileInput');
-    const runBtn = document.getElementById('runBtn');
-    const saveBtn = document.getElementById('saveBtn');
-    const classroom = document.getElementById('classroom');
-    const statusMsg = document.getElementById('statusMsg');
-    
-    let loadedData = [];
-    let isLoadMode = false; // true면 저장파일 복구, false면 새 명단 랜덤 섞기
+    const fileInput = document.getElementById('fileInput'), runBtn = document.getElementById('runBtn'),
+          saveBtn = document.getElementById('saveBtn'), viewBtn = document.getElementById('viewBtn'),
+          classroom = document.getElementById('classroom'), statusMsg = document.getElementById('statusMsg'),
+          avoidSameSeat = document.getElementById('avoidSameSeat'),
+          listModal = document.getElementById('listModal'), modalOverlay = document.getElementById('modalOverlay'),
+          nameListArea = document.getElementById('nameListArea'), nameCount = document.getElementById('nameCount'),
+          closeModal = document.getElementById('closeModal');
 
-    // 1. 8열 구조 빌드 (27석: 5+5+빈칸+5+4+빈칸+4+4)
+    let studentNames = [];     // 순수 학생 이름 목록
+    let previousData = [];     // 파일을 불러왔을 때의 초기 상태
+
     function initClassroom() {
-        const elements = classroom.querySelectorAll('.seat, .aisle');
-        elements.forEach(el => el.remove());
-
-        const config = [
-            { rows: 5 }, { rows: 5 }, { type: 'aisle' }, // 1,2열, 3열(빈)
-            { rows: 5 }, { rows: 4 }, { type: 'aisle' }, // 4,5열, 6열(빈)
-            { rows: 4 }, { rows: 4 }                    // 7,8열
-        ];
-
+        classroom.querySelectorAll('.seat, .aisle').forEach(el => el.remove());
+        const config = [{rows:5},{rows:5},{type:'aisle'},{rows:5},{rows:4},{type:'aisle'},{rows:4},{rows:4}];
         config.forEach((col, idx) => {
             if (col.type === 'aisle') {
-                const aisle = document.createElement('div');
-                aisle.className = 'aisle';
-                aisle.innerText = '통 로';
-                aisle.style.gridColumn = idx + 1;
-                aisle.style.gridRow = '2 / span 6';
-                classroom.appendChild(aisle);
+                const aisle = document.createElement('div'); aisle.className = 'aisle'; aisle.innerText = '통 로';
+                aisle.style.gridColumn = idx + 1; aisle.style.gridRow = '2 / span 6'; classroom.appendChild(aisle);
             } else {
                 for (let r = 1; r <= col.rows; r++) {
-                    const seat = document.createElement('div');
-                    seat.className = 'seat';
-                    seat.style.gridColumn = idx + 1;
-                    seat.style.gridRow = r + 1;
-                    seat.innerText = '비어있음';
+                    const seat = document.createElement('div'); seat.className = 'seat';
+                    seat.style.gridColumn = idx + 1; seat.style.gridRow = r + 1; seat.innerText = '빈자리';
                     classroom.appendChild(seat);
                 }
             }
@@ -216,107 +170,114 @@
     }
     initClassroom();
 
-    // 2. 파일 읽기 (원본 명단 vs 저장된 결과 판단)
+    // 즉시 표시 함수
+    function displayNames(data) {
+        const seats = document.querySelectorAll('.seat');
+        seats.forEach((seat, i) => {
+            if (data[i] && data[i] !== "-" && data[i] !== "빈자리") { 
+                seat.innerText = data[i]; seat.classList.add('assigned'); 
+            } else { 
+                seat.innerText = "-"; seat.classList.remove('assigned'); 
+            }
+        });
+    }
+
+    // 1. 파일 불러오기 이벤트 (독립적으로 작동)
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const rawText = ev.target.result;
-            const content = rawText.split('&')[0];
-            loadedData = content.split(',')
-                                .map(s => s.trim())
-                                .filter(s => s !== "");
+            const content = ev.target.result.split('&')[0];
+            const parsedData = content.split(',').map(s => s.trim()).filter(s => s !== "");
+            
+            previousData = [...parsedData]; // 비교용 기준 데이터 저장
+            studentNames = parsedData.filter(s => s !== "-");
 
-            if (loadedData.length > 0) {
-                runBtn.disabled = false;
-                
-                // 파일 이름으로 저장파일인지 원본명단인지 유추
-                if (file.name.includes("자리배치")) {
-                    isLoadMode = true;
-                    statusMsg.innerText = "저장된 배치 파일을 불러왔습니다. [배치 시작]을 누르면 자리가 복원됩니다.";
-                    runBtn.innerText = "🔄 저장된 자리 복원하기";
-                } else {
-                    isLoadMode = false;
-                    statusMsg.innerText = "새 명단을 불러왔습니다. [배치 시작]을 누르면 랜덤으로 자리가 섞입니다.";
-                    runBtn.innerText = "🎲 랜덤 자리 배치 시작";
-                }
+            if (studentNames.length > 0) {
+                runBtn.disabled = false; viewBtn.disabled = false;
+                displayNames(parsedData); 
+                statusMsg.innerText = `✅ ${studentNames.length}명의 데이터를 불러왔습니다.`;
+                fileInput.value = ""; // 같은 파일을 다시 불러올 수 있도록 리셋
             }
         };
         reader.readAsText(file);
     });
 
-    // 3. 자리 배치 실행 (애니메이션 공통)
-    runBtn.addEventListener('click', () => {
-        runBtn.disabled = true;
-        saveBtn.disabled = true;
+    // 2. 스마트 셔플 (중복 체크)
+    function getSmartShuffle() {
+        let attempts = 0;
+        let shuffled = [];
+        const prevOnlyNames = previousData; // 전체 좌석 형태 유지
+
+        while (attempts < 200) {
+            shuffled = [...studentNames].sort(() => Math.random() - 0.5);
+            if (!avoidSameSeat.checked) return shuffled;
+
+            let isOverlapped = false;
+            for (let i = 0; i < shuffled.length; i++) {
+                if (shuffled[i] === prevOnlyNames[i]) {
+                    isOverlapped = true;
+                    break;
+                }
+            }
+            if (!isOverlapped) return shuffled;
+            attempts++;
+        }
+        return shuffled;
+    }
+
+    // 3. 자리 배치 시작 버튼 이벤트
+    runBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 이벤트 전파 방지
+        runBtn.disabled = true; saveBtn.disabled = true; viewBtn.disabled = true;
+        
         const seats = document.querySelectorAll('.seat');
+        const targetNames = getSmartShuffle();
         
-        // 배치할 데이터 결정
-        // isLoadMode가 true면 불러온 데이터 그대로, false면 랜덤으로 섞음
-        const targetData = isLoadMode ? [...loadedData] : [...loadedData].sort(() => Math.random() - 0.5);
-        
-        statusMsg.innerText = "자리를 배치하는 중입니다...";
+        statusMsg.innerText = "⚡ 자리를 섞는 중입니다...";
         const startTime = Date.now();
-        const duration = 3000; // 3초 임팩트
 
         const shuffleTimer = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-            
             seats.forEach(s => {
-                s.classList.add('shuffling');
-                // 섞이는 동안에는 무작위 이름 표시
-                s.innerText = loadedData[Math.floor(Math.random() * loadedData.length)];
+                s.classList.add('shuffling'); s.classList.remove('assigned');
+                s.innerText = studentNames[Math.floor(Math.random() * studentNames.length)];
             });
 
-            if (elapsed >= duration) {
+            if (Date.now() - startTime >= 3000) {
                 clearInterval(shuffleTimer);
-                
                 seats.forEach((seat, i) => {
                     seat.classList.remove('shuffling');
-                    if (targetData[i]) {
-                        seat.innerText = targetData[i];
-                        seat.classList.add('assigned');
-                    } else {
-                        seat.innerText = "-";
-                        seat.classList.remove('assigned');
-                    }
+                    if (targetNames[i]) { seat.innerText = targetNames[i]; seat.classList.add('assigned'); }
+                    else { seat.innerText = "-"; }
                 });
-                
-                statusMsg.innerText = "자리 배치가 완료되었습니다!";
-                runBtn.disabled = false;
-                saveBtn.disabled = false;
-                
-                // 한 번 배치 후에는 무조건 랜덤 섞기 모드로 전환 (실수 방지)
-                isLoadMode = false; 
-                runBtn.innerText = "🎲 랜덤 자리 배치 시작";
+                statusMsg.innerText = "🎊 배치가 완료되었습니다!";
+                runBtn.disabled = false; saveBtn.disabled = false; viewBtn.disabled = false;
             }
         }, 80);
     });
 
-    // 4. 현재 결과 저장
+    // 기타 모달 및 저장 기능
+    viewBtn.addEventListener('click', () => {
+        nameListArea.innerHTML = ""; nameCount.innerText = studentNames.length;
+        studentNames.forEach((name, i) => {
+            const item = document.createElement('div'); item.className = 'name-item'; item.innerText = `${i+1}. ${name}`;
+            nameListArea.appendChild(item);
+        });
+        listModal.style.display = 'block'; modalOverlay.style.display = 'block';
+    });
+    [closeModal, modalOverlay].forEach(el => el.addEventListener('click', () => {
+        listModal.style.display = 'none'; modalOverlay.style.display = 'none';
+    }));
     saveBtn.addEventListener('click', () => {
-        const seats = document.querySelectorAll('.seat');
-        const names = Array.from(seats).map(s => s.innerText);
-        // 빈 자리(-)는 그대로 저장하되, 나중에 파싱할 때 문제없게 처리
-        const content = names.join(',') + ',&';
-        
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        
+        const content = Array.from(document.querySelectorAll('.seat')).map(s => s.innerText).join(',') + ',&';
         const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        // 파일명에 '자리배치'를 넣어 나중에 불러올 때 판단 기준으로 사용
-        a.download = `${dateStr}_2-6_자리배치.txt`; 
+        a.href = URL.createObjectURL(blob);
+        a.download = `${new Date().toISOString().split('T')[0]}_2-6_자리배치.txt`;
         a.click();
-        URL.revokeObjectURL(url);
-        
-        statusMsg.innerText = "현재 배치가 파일로 저장되었습니다.";
     });
 </script>
-
 </body>
 </html>
