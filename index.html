@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2학년 6반 자리 배치 시스템 - 정식 버전</title>
+    <title>2학년 6반 자리 배치 시스템 - 26인 버전</title>
     <style>
         :root {
             --primary: #2d3436; --accent: #0984e3; --save: #00b894;
@@ -21,9 +21,8 @@
         }
 
         .header { text-align: center; margin-bottom: 20px; }
-        .status-msg { text-align: center; color: var(--accent); font-weight: bold; height: 24px; margin-bottom: 20px; }
+        .status-msg { text-align: center; color: var(--accent); font-weight: bold; height: 24px; margin-bottom: 20px; font-size: 1.1rem; }
         
-        /* 컨트롤바 레이아웃 수정: 버튼들이 겹치지 않게 명확히 분리 */
         .controls {
             display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;
             margin-bottom: 30px; padding: 20px; background: #f8f9fa; 
@@ -32,7 +31,6 @@
 
         .btn-wrapper { position: relative; width: 180px; height: 50px; }
         
-        /* 파일 입력창이 버튼 영역 안에서만 작동하도록 제한 */
         input[type="file"] { 
             position: absolute; left: 0; top: 0; width: 100%; height: 100%; 
             opacity: 0; cursor: pointer; z-index: 10;
@@ -62,6 +60,7 @@
             width: 100px; height: 75px; background: #fdfdfd; border: 2px solid #dcdde1;
             border-radius: 10px; display: flex; justify-content: center;
             align-items: center; font-weight: 800; font-size: 1.1rem;
+            transition: all 0.3s;
         }
 
         .aisle {
@@ -71,7 +70,7 @@
         }
 
         .shuffling {
-            animation: shake 0.1s infinite; background-color: #fbc531 !important; color: white !important;
+            animation: shake 0.1s infinite; background-color: #fbc531 !important; color: white !important; transform: scale(1.05);
         }
 
         @keyframes shake {
@@ -86,7 +85,6 @@
             display: flex; align-items: center; justify-content: center;
         }
         
-        /* 버튼 크기 고정 */
         .action-btn { width: auto; padding: 0 20px; height: 50px; }
 
         .btn-load { background: var(--load); }
@@ -107,7 +105,7 @@
 <body>
 
 <div class="container">
-    <div class="header"><h1>🎓 2학년 6반 자리 배치 시스템</h1></div>
+    <div class="header"><h1>🎓 2학년 6반 자리 배치 시스템 (26인석)</h1></div>
     <div class="status-msg" id="statusMsg">학생 명단 파일을 불러와 주세요.</div>
     
     <div class="controls">
@@ -149,12 +147,17 @@
           nameListArea = document.getElementById('nameListArea'), nameCount = document.getElementById('nameCount'),
           closeModal = document.getElementById('closeModal');
 
-    let studentNames = [];     // 순수 학생 이름 목록
-    let previousData = [];     // 파일을 불러왔을 때의 초기 상태
+    let studentNames = [];     
+    let previousData = [];     
 
+    // 1. 8열 구조 수정 (총 26석: 5+5+빈+4+4+빈+4+4)
     function initClassroom() {
         classroom.querySelectorAll('.seat, .aisle').forEach(el => el.remove());
-        const config = [{rows:5},{rows:5},{type:'aisle'},{rows:5},{rows:4},{type:'aisle'},{rows:4},{rows:4}];
+        const config = [
+            {rows:5}, {rows:5}, {type:'aisle'},
+            {rows:4}, {rows:4}, {type:'aisle'}, // 👈 좌석수 수정 (기존 5,4에서 4,4로 변경)
+            {rows:4}, {rows:4}
+        ];
         config.forEach((col, idx) => {
             if (col.type === 'aisle') {
                 const aisle = document.createElement('div'); aisle.className = 'aisle'; aisle.innerText = '통 로';
@@ -170,7 +173,6 @@
     }
     initClassroom();
 
-    // 즉시 표시 함수
     function displayNames(data) {
         const seats = document.querySelectorAll('.seat');
         seats.forEach((seat, i) => {
@@ -182,7 +184,6 @@
         });
     }
 
-    // 1. 파일 불러오기 이벤트 (독립적으로 작동)
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -192,24 +193,22 @@
             const content = ev.target.result.split('&')[0];
             const parsedData = content.split(',').map(s => s.trim()).filter(s => s !== "");
             
-            previousData = [...parsedData]; // 비교용 기준 데이터 저장
+            previousData = [...parsedData]; 
             studentNames = parsedData.filter(s => s !== "-");
 
             if (studentNames.length > 0) {
                 runBtn.disabled = false; viewBtn.disabled = false;
                 displayNames(parsedData); 
                 statusMsg.innerText = `✅ ${studentNames.length}명의 데이터를 불러왔습니다.`;
-                fileInput.value = ""; // 같은 파일을 다시 불러올 수 있도록 리셋
+                fileInput.value = ""; 
             }
         };
         reader.readAsText(file);
     });
 
-    // 2. 스마트 셔플 (중복 체크)
     function getSmartShuffle() {
         let attempts = 0;
         let shuffled = [];
-        const prevOnlyNames = previousData; // 전체 좌석 형태 유지
 
         while (attempts < 200) {
             shuffled = [...studentNames].sort(() => Math.random() - 0.5);
@@ -217,7 +216,7 @@
 
             let isOverlapped = false;
             for (let i = 0; i < shuffled.length; i++) {
-                if (shuffled[i] === prevOnlyNames[i]) {
+                if (shuffled[i] === previousData[i]) {
                     isOverlapped = true;
                     break;
                 }
@@ -228,9 +227,8 @@
         return shuffled;
     }
 
-    // 3. 자리 배치 시작 버튼 이벤트
     runBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 이벤트 전파 방지
+        e.stopPropagation(); 
         runBtn.disabled = true; saveBtn.disabled = true; viewBtn.disabled = true;
         
         const seats = document.querySelectorAll('.seat');
@@ -252,13 +250,12 @@
                     if (targetNames[i]) { seat.innerText = targetNames[i]; seat.classList.add('assigned'); }
                     else { seat.innerText = "-"; }
                 });
-                statusMsg.innerText = "🎊 배치가 완료되었습니다!";
+                statusMsg.innerText = "🎊 공정한 배치가 완료되었습니다!";
                 runBtn.disabled = false; saveBtn.disabled = false; viewBtn.disabled = false;
             }
         }, 80);
     });
 
-    // 기타 모달 및 저장 기능
     viewBtn.addEventListener('click', () => {
         nameListArea.innerHTML = ""; nameCount.innerText = studentNames.length;
         studentNames.forEach((name, i) => {
